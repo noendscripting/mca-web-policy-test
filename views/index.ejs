@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= pageTitle %></title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">MCA Web Policy Test</div>
+      <% if (user) { %>
+        <div class="user-pill">
+          <span>Signed in as <strong><%= user.name || user.email || 'User' %></strong></span>
+          <a href="/auth/logout">Sign out</a>
+        </div>
+      <% } else if (oidcEnabled) { %>
+        <a class="primary-link" href="/auth/login">Sign in with Entra ID</a>
+      <% } else { %>
+        <span class="muted">OIDC not configured</span>
+      <% } %>
+    </header>
+
+    <main class="shell">
+      <section class="hero card">
+        <div>
+          <p class="eyebrow">Microsoft Defender for Cloud Apps</p>
+          <h1>File upload and download testing sandbox</h1>
+          <p>
+            Use this site to validate how file movements are handled by DLP and CASB policies.
+            The sample workflow supports Entra ID OIDC-based sign-in and uploads files into Azure Blob Storage.
+          </p>
+        </div>
+        <% if (user) { %>
+          <div class="badge success">Authenticated session</div>
+        <% } else { %>
+          <div class="badge">Unauthenticated</div>
+        <% } %>
+      </section>
+
+      <% if (configWarning) { %>
+        <div class="alert card">
+          <strong>Configuration status:</strong> <%= configWarning %>
+        </div>
+      <% } %>
+
+      <section class="grid">
+        <div class="card">
+          <h2>Environment</h2>
+          <ul class="meta-list">
+            <li><span>Storage backend:</span> <strong><%= storageMode %></strong></li>
+            <li><span>OIDC:</span> <strong><%= oidcEnabled ? 'Enabled' : 'Disabled' %></strong></li>
+          </ul>
+
+          <% if (!user) { %>
+            <p class="callout">
+              Sign in with Microsoft Entra ID to upload and download sample files as part of a policy validation flow.
+            </p>
+            <% if (oidcEnabled) { %>
+              <a class="primary-button" href="/auth/login">Continue to login</a>
+            <% } else { %>
+              <a class="secondary-button" href="/auth/login" aria-disabled="true">Login unavailable</a>
+            <% } %>
+          <% } else { %>
+            <form action="/upload" method="POST" enctype="multipart/form-data" class="upload-form">
+              <label for="file">Upload a test file</label>
+              <input id="file" type="file" name="file" required />
+              <button type="submit">Upload file</button>
+            </form>
+          <% } %>
+        </div>
+
+        <div class="card">
+          <h2>Recommended test scenarios</h2>
+          <ol>
+            <li>Upload a file from an authenticated user session.</li>
+            <li>Verify the file appears in the storage list.</li>
+            <li>Download the file to confirm policy evaluation.</li>
+            <li>Use the file names and contents to validate MDCA alerts and controls.</li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="card files-panel">
+        <div class="panel-header">
+          <h2>Files</h2>
+          <span><%= files.length %> item(s)</span>
+        </div>
+
+        <% if (files.length === 0) { %>
+          <p class="empty-state">No files have been uploaded yet.</p>
+        <% } else { %>
+          <ul class="file-list">
+            <% files.forEach((file) => { %>
+              <li>
+                <div>
+                  <strong><%= file.displayName %></strong>
+                  <small><%= file.storage %> · <%= file.size %> bytes · <%= new Date(file.createdAt).toLocaleString() %></small>
+                </div>
+                <% if (user) { %>
+                  <a href="/download/<%= encodeURIComponent(file.fileName) %>" target="_blank">Download</a>
+                <% } %>
+              </li>
+            <% }) %>
+          </ul>
+        <% } %>
+      </section>
+    </main>
+  </body>
+</html>
