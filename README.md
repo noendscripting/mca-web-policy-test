@@ -39,6 +39,7 @@ Create an app registration in Microsoft Entra admin center:
 - Redirect URI: `http://localhost:3000/auth/callback` for local testing and `https://<your-app-name>.azurewebsites.net/auth/callback` for Azure
 - Allowed token audiences: the application ID URI or the configured client ID
 - Authentication method: Secret or certificate
+- Required for MDCA: create a Microsoft Entra service principal for this app registration so MDCA can authenticate and evaluate the app as a service principal object in the tenant.
 
 Then set these environment variables:
 
@@ -67,6 +68,7 @@ Both options use a system-assigned managed identity for Blob Storage authorizati
 - Node.js 20 and npm for local validation.
 - Permission to create resource groups, virtual networks, private endpoints, private DNS zones, App Service resources, storage accounts, managed identities, and role assignments. `Owner` or `Contributor` plus `User Access Administrator` on the target scope is sufficient.
 - Permission to create a Microsoft Entra app registration, or an app registration supplied by an Entra administrator.
+- A Microsoft Entra service principal for the app registration so Microsoft Defender for Cloud Apps (MDCA) can authenticate to the application and evaluate the sign-in context. If the app registration is created in Azure CLI, create the service principal with `az ad sp create --id $ClientId` after the app object exists.
 
 Run all commands from the repository root. Sign in and select the target subscription:
 
@@ -389,6 +391,8 @@ $ClientId = az ad app create `
   --query appId `
   --output tsv
 
+$ServicePrincipalId = az ad sp create --id $ClientId --query id --output tsv
+
 $ClientSecret = az ad app credential reset `
   --id $ClientId `
   --append `
@@ -399,6 +403,8 @@ $ClientSecret = az ad app credential reset `
 ```
 
 Save the client secret immediately in an approved password manager. It cannot be retrieved later. Do not add it to `.env`, source control, shell profiles, or deployment scripts.
+
+The service principal is required for Microsoft Defender for Cloud Apps (MDCA) integration and to ensure the app registration exists as an Entra service principal object that policy evaluation can reference.
 
 If your organization does not allow app registration creation, give an Entra administrator these values:
 
