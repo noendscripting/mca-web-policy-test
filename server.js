@@ -82,7 +82,7 @@ async function ensureStorage() {
   const blobConfig = await getBlobContainerClient();
   if (blobConfig) {
     const containerClient = blobConfig.client.getContainerClient(blobConfig.containerName);
-    await containerClient.createIfNotExists({ access: 'blob' });
+    await containerClient.createIfNotExists();
     return { mode: 'blob', containerClient, containerName: blobConfig.containerName };
   }
 
