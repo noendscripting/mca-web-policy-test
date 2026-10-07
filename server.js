@@ -195,7 +195,7 @@ async function initializeOidc() {
   }
 
   try {
-    const metadata = await discovery(issuerUrl, clientId, clientSecret);
+    const metadata = await discovery(new URL(issuerUrl), clientId, clientSecret);
     const serverMetadata = metadata.serverMetadata();
 
     passport.use(
