@@ -16,6 +16,7 @@
     "express-session": "^1.18.0",
     "multer": "^2.0.2",
     "openid-client": "^6.1.3",
-    "passport": "^0.7.0"
+    "passport": "^0.7.0",
+    "passport-openidconnect": "^0.1.2"
   }
 }

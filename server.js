@@ -4,7 +4,8 @@ const express = require('express');
 const session = require('express-session');
 const passport = require('passport');
 const multer = require('multer');
-const { Issuer, Strategy } = require('openid-client');
+const { discovery } = require('openid-client');
+const OpenIDConnectStrategy = require('passport-openidconnect').Strategy;
 const { BlobServiceClient } = require('@azure/storage-blob');
 const { DefaultAzureCredential } = require('@azure/identity');
 require('dotenv').config();
@@ -194,29 +195,34 @@ async function initializeOidc() {
   }
 
   try {
-    const issuer = await Issuer.discover(issuerUrl);
-    const client = new issuer.Client({
-      client_id: clientId,
-      client_secret: clientSecret,
-      redirect_uris: [redirectUri],
-      response_types: ['code'],
-      token_endpoint_auth_method: 'client_secret_post',
-    });
+    const metadata = await discovery(issuerUrl, clientId, clientSecret);
+    const serverMetadata = metadata.serverMetadata();
 
     passport.use(
       'oidc',
-      new Strategy({ client, params: { scope: 'openid profile email' } }, (tokenset, userinfo, done) => {
-        const user = {
-          id: userinfo.sub || userinfo.email || 'unknown-user',
-          name: userinfo.name || userinfo.preferred_username || 'User',
-          email: userinfo.email || userinfo.preferred_username || '',
-          groups: userinfo.groups || [],
-          accessToken: tokenset.access_token,
-          idToken: tokenset.id_token,
-        };
+      new OpenIDConnectStrategy(
+        {
+          issuer: issuerUrl,
+          authorizationURL: serverMetadata.authorization_endpoint,
+          tokenURL: serverMetadata.token_endpoint,
+          userInfoURL: serverMetadata.userinfo_endpoint,
+          clientID: clientId,
+          clientSecret,
+          callbackURL: redirectUri,
+          scope: 'openid profile email',
+        },
+        (issuer, profile, done) => {
+          const user = {
+            id: profile.id || profile.email || 'unknown-user',
+            name: profile.displayName || profile.username || 'User',
+            email: profile.emails && profile.emails[0] ? profile.emails[0].value : (profile.email || ''),
+            groups: profile._json && Array.isArray(profile._json.groups) ? profile._json.groups : [],
+            issuer,
+          };
 
-        return done(null, user);
-      })
+          return done(null, user);
+        }
+      )
     );
 
     app.locals.oidcEnabled = true;
