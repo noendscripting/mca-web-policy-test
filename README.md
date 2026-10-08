@@ -49,6 +49,7 @@ AAD_CLIENT_ID=<app-registration-client-id>
 AAD_CLIENT_SECRET=<client-secret>
 OIDC_ISSUER=https://login.microsoftonline.com/<tenant-id>/v2.0
 OIDC_REDIRECT_URI=http://localhost:3000/auth/callback
+OIDC_SCOPES=openid profile email api://<client-id>/access_as_user
 ```
 
 ## Azure deployment
@@ -373,7 +374,7 @@ az webapp config appsettings set `
 
 ### Configure Microsoft Entra ID
 
-The application uses OIDC and requires a confidential Microsoft Entra web app registration.
+The application uses OIDC and requires a confidential Microsoft Entra web app registration. The sign-in request must include the custom resource scope `api://<client-id>/access_as_user` in addition to the baseline OIDC scopes so Microsoft Entra evaluates conditional access (CA) against the custom resource, not only the built-in OIDC baseline path.
 
 #### Create an app registration with Azure CLI
 
@@ -406,14 +407,27 @@ Save the client secret immediately in an approved password manager. It cannot be
 
 The service principal is required for Microsoft Defender for Cloud Apps (MDCA) integration and to ensure the app registration exists as an Entra service principal object that policy evaluation can reference.
 
+Configure the app's exposed API and custom scope in the app registration:
+
+1. In Microsoft Entra admin center, open the app registration.
+2. Go to **Expose an API**.
+3. Set the **Application ID URI** to `api://<client-id>`.
+4. Add a delegated scope named `access_as_user`.
+5. Set the scope description to something like `Access the app as the signed-in user`.
+6. Keep the consent model as **Admins and users** if you want end users to consent to the custom resource scope without an admin action.
+7. If a separate client app is used to call this API, add it to **Authorized client applications** and grant the custom scope.
+
+Do not use only `User.Read` or only the OIDC scopes for this flow. The sign-in request must include `openid profile email api://<client-id>/access_as_user` so Entra evaluates CA against the custom resource.
+
 If your organization does not allow app registration creation, give an Entra administrator these values:
 
 - Platform: **Web**
 - Redirect URI: `<web-app-url>/auth/callback`
 - Supported account type: **Accounts in this organizational directory only**
 - Token: **ID tokens**
+- Exposed API: `api://<client-id>` with delegated scope `access_as_user`
 
-The administrator must then provide the application (client) ID and a client secret.
+The administrator must then provide the application (client) ID, the custom scope name, and a client secret.
 
 #### Configure App Service settings
 
@@ -433,6 +447,7 @@ az webapp config appsettings set `
     AAD_CLIENT_SECRET=$ClientSecret `
     OIDC_ISSUER="https://login.microsoftonline.com/$TenantId/v2.0" `
     OIDC_REDIRECT_URI=$RedirectUri `
+    OIDC_SCOPES="openid profile email api://$ClientId/access_as_user" `
     AZURE_STORAGE_ACCOUNT_NAME=$StorageAccountName `
     AZURE_STORAGE_CONTAINER_NAME=$StorageContainerName `
     SCM_DO_BUILD_DURING_DEPLOYMENT=true `

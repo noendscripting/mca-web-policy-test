@@ -189,6 +189,7 @@ async function initializeOidc() {
   const clientSecret = process.env.AAD_CLIENT_SECRET;
   const redirectUri = process.env.OIDC_REDIRECT_URI || `http://localhost:${PORT}/auth/callback`;
   const issuerUrl = process.env.OIDC_ISSUER || (tenantId ? `https://login.microsoftonline.com/${tenantId}/v2.0` : null);
+  const requestedScopes = (process.env.OIDC_SCOPES || `openid profile email api://` + clientId + `/access_as_user`).trim();
 
   if (!issuerUrl || !clientId || !clientSecret) {
     return;
@@ -209,7 +210,7 @@ async function initializeOidc() {
           clientID: clientId,
           clientSecret,
           callbackURL: redirectUri,
-          scope: 'openid profile email',
+          scope: requestedScopes,
         },
         (issuer, profile, done) => {
           const user = {
