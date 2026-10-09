@@ -2,7 +2,7 @@
   "name": "mca-web-policy-test",
   "version": "1.0.0",
   "private": true,
-  "description": "Azure-ready sample app for testing Defender for Cloud Apps upload/download policies with Entra ID OIDC auth.",
+  "description": "Azure-ready sample app for testing Defender for Cloud Apps upload/download policies with Entra ID OIDC or SAML auth.",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js"
@@ -10,12 +10,12 @@
   "dependencies": {
     "@azure/identity": "^4.9.0",
     "@azure/storage-blob": "^12.26.0",
+    "@node-saml/passport-saml": "^5.1.1",
     "dotenv": "^16.4.1",
     "ejs": "^3.1.1",
     "express": "^4.19.2",
     "express-session": "^1.18.0",
     "multer": "^2.0.2",
-    "openid-client": "^6.1.3",
     "passport": "^0.7.0",
     "passport-openidconnect": "^0.1.2"
   }

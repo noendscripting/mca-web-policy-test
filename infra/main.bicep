@@ -1,17 +1,20 @@
-@description('The name of the environment.')
+@description('The name of the environment. Shared resources and both web apps are named from it.')
 param environmentName string = 'mcawebpolicy'
 
 @description('The Azure region for deployment.')
 param location string = resourceGroup().location
 
-@description('The SKU for the App Service plan. Use F1 for low-cost dev/test workloads.')
-param appServicePlanSku string = 'F1'
+@description('The SKU for the App Service plan. VNet integration and Always On require Basic (B1) or higher.')
+param appServicePlanSku string = 'B1'
 
 @description('The Azure Storage account name.')
-param storageAccountName string = 'mcastorageaccount101'
+param storageAccountName string
 
-@description('The container name used for uploaded files.')
+@description('The container used by the OIDC web app.')
 param storageContainerName string = 'mdca-files'
+
+@description('The container used by the SAML web app.')
+param samlStorageContainerName string = 'mdca-files-saml'
 
 @description('The address space for the application virtual network.')
 param virtualNetworkAddressPrefix string = '10.20.0.0/16'
@@ -104,6 +107,14 @@ resource storageContainer 'Microsoft.Storage/storageAccounts/blobServices/contai
   }
 }
 
+resource samlStorageContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: blobService
+  name: samlStorageContainerName
+  properties: {
+    publicAccess: 'None'
+  }
+}
+
 resource blobPrivateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
   name: blobPrivateDnsZoneName
   location: 'global'
@@ -170,53 +181,10 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
   }
 }
 
-resource webApp 'Microsoft.Web/sites@2023-01-01' = {
-  name: '${environmentName}-web'
-  location: location
-  kind: 'app,linux'
-  identity: {
-    type: 'SystemAssigned'
-  }
-  properties: {
-    serverFarmId: appServicePlan.id
-    httpsOnly: true
-    clientAffinityEnabled: false
-    virtualNetworkSubnetId: appServiceIntegrationSubnet.id
-    siteConfig: {
-      linuxFxVersion: 'NODE|22-lts'
-      alwaysOn: true
-      ftpsState: 'FtpsOnly'
-      minTlsVersion: '1.2'
-      vnetRouteAllEnabled: true
-      appSettings: [
-        {
-          name: 'WEBSITES_PORT'
-          value: '3000'
-        }
-        {
-          name: 'AZURE_STORAGE_ACCOUNT_NAME'
-          value: storageAccount.name
-        }
-        {
-          name: 'AZURE_STORAGE_CONTAINER_NAME'
-          value: storageContainerName
-        }
-      ]
-    }
-  }
-}
-
-resource storageBlobDataContributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(storageAccount.id, webApp.id, 'Storage Blob Data Contributor')
-  scope: storageAccount
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
-    principalId: webApp.identity.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
-output webAppName string = webApp.name
-output webAppUrl string = 'https://${webApp.properties.defaultHostName}'
+// Web apps are deployed separately by infra/web-app.bicep, once per sign-in method.
+output appServicePlanName string = appServicePlan.name
+output virtualNetworkName string = virtualNetwork.name
+output integrationSubnetName string = appServiceIntegrationSubnet.name
 output storageAccountName string = storageAccount.name
 output storageContainerName string = storageContainerName
+output samlStorageContainerName string = samlStorageContainerName
