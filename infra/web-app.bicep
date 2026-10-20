@@ -61,6 +61,14 @@ resource webApp 'Microsoft.Web/sites@2023-01-01' = {
   }
 }
 
+resource scmPublishingCredentials 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2023-01-01' = {
+  parent: webApp
+  name: 'scm'
+  properties: {
+    allow: true
+  }
+}
+
 resource storageBlobDataContributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(storageAccount.id, webApp.id, 'Storage Blob Data Contributor')
   scope: storageAccount

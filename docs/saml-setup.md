@@ -20,7 +20,7 @@ az account set --subscription "<subscription-id>"
 .\scripts\deploy-saml.ps1 -Location eastus   # change to your region
 ```
 
-The script creates the shared resources if missing (resource group `rg-mca-web-policy-test`, plan, VNet, private Storage account, containers), deploys only the SAML web app `mcawebpolicy-saml-web` (container `mdca-files-saml`), sets `AUTH_PROVIDER=saml` and the other base settings, deploys the code, and prints:
+The script creates the shared resources if missing (resource group `rg-mca-web-policy-test`, plan, VNet, private Storage account, containers), deploys only the SAML web app `mcawebpolicy-saml-web` (container `mdca-files-saml`) with SCM Basic Auth Publishing Credentials enabled for code uploads, sets `AUTH_PROVIDER=saml` and the other base settings, deploys the code, and prints:
 
 ```text
 Identifier (Entity ID): https://<app>.azurewebsites.net/saml/metadata
@@ -88,6 +88,7 @@ Run `npm start` and open <http://localhost:3000>.
 
 | Symptom | Check |
 |---------|-------|
+| SCM publishing credentials disabled or code upload unauthorized | The deployment enables SCM Basic Auth Publishing Credentials before uploading. Retry the [code upload](../README.md#scm-publishing-credentials); if enabling fails, check permissions and Azure Policy. |
 | Page says `AUTH_PROVIDER is not set` or `/health` shows `authProvider: oidc` | The settings were never applied to this app. Re-run `deploy-saml.ps1`. |
 | `authEnabled: False` | Step 3 has not run, or `SAML_ENTRY_POINT`, `SAML_ISSUER`, and `SAML_IDP_CERT` are missing: `az webapp config appsettings list --name <web app> --resource-group <resource group>`. |
 | Default Azure "app is running" page | Code was not deployed. Re-run `deploy-saml.ps1`. |

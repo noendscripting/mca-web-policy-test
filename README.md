@@ -38,6 +38,18 @@ Follow the guide for the sign-in method you want (each guide is the complete pro
 - [Set up the OIDC app](docs/oidc-setup.md)
 - [Set up the SAML app](docs/saml-setup.md)
 
+### SCM publishing credentials
+
+Code is uploaded with zip deploy, which needs **SCM Basic Auth Publishing Credentials** enabled on the app. `infra/web-app.bicep` enables it, and `scripts/deploy.ps1` re-enables it before each upload. FTP and user sign-in settings are not changed.
+
+To re-upload code to an existing app without re-provisioning:
+
+```powershell
+.\scripts\deploy.ps1 -WebAppName mcawebpolicy-oidc-web -ResourceGroup rg-mca-web-policy-test   # SAML: mcawebpolicy-saml-web
+```
+
+If enabling fails, check your permissions and Azure Policy. If your organization forbids basic publishing authentication, deploy with Microsoft Entra authentication instead (for example GitHub Actions with Azure OIDC); a publish-profile workflow needs SCM basic auth too.
+
 ## Project layout
 
 ```text

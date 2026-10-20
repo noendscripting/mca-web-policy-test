@@ -18,7 +18,7 @@ az account set --subscription "<subscription-id>"
 The script is safe to re-run. It:
 
 1. Creates the shared resources if missing (resource group `rg-mca-web-policy-test`, plan, VNet, private Storage account, containers) by deploying `infra/main.bicep`. This step never creates or changes a web app, and it is safe if the SAML app already exists.
-2. Deploys only the OIDC web app `mcawebpolicy-oidc-web` with `infra/web-app.bicep`, using the container `mdca-files`.
+2. Deploys only the OIDC web app `mcawebpolicy-oidc-web` with `infra/web-app.bicep`, using the container `mdca-files` and enabling SCM Basic Auth Publishing Credentials for code uploads.
 3. Creates (or reuses) the Entra app registration `mca-web-policy-oidc`, its service principal (so MDCA can evaluate the app), the `api://<client-id>` identifier URI, and the `access_as_user` scope that sign-in requests.
 4. Creates a client secret and sets all app settings, including `AUTH_PROVIDER=oidc`, in one step.
 5. Deploys the code and checks `/health` until it reports `authProvider=oidc` and `authEnabled=True`.
@@ -48,6 +48,7 @@ Run `npm start` and open <http://localhost:3000>.
 
 | Symptom | Check |
 |---------|-------|
+| SCM publishing credentials disabled or code upload unauthorized | The deployment enables SCM Basic Auth Publishing Credentials before uploading. Retry the [code upload](../README.md#scm-publishing-credentials); if enabling fails, check permissions and Azure Policy. |
 | `authEnabled: False` | Run `az webapp config appsettings list` and confirm `AUTH_PROVIDER=oidc`, `AAD_*`, and `OIDC_REDIRECT_URI`; view the logs for the reason. |
 | Page says `AUTH_PROVIDER is not set` | The settings were never applied. Re-run `deploy-oidc.ps1`. |
 | Redirect URI error from Entra | The redirect URI on the app registration must exactly match `<app url>/auth/callback`. |
