@@ -96,7 +96,6 @@ function New-BaseSettings {
     AUTH_PROVIDER                   = $AuthProvider
     NODE_ENV                        = 'production'
     WEBSITES_PORT                   = '3000'
-    SCM_DO_BUILD_DURING_DEPLOYMENT  = 'true'
     SESSION_SECRET                  = $secret
     AZURE_STORAGE_ACCOUNT_NAME      = $StorageAccountName
     AZURE_STORAGE_CONTAINER_NAME    = $ContainerName

@@ -52,6 +52,7 @@ Run `npm start` and open <http://localhost:3000>.
 | `authEnabled: False` | Run `az webapp config appsettings list` and confirm `AUTH_PROVIDER=oidc`, `AAD_*`, and `OIDC_REDIRECT_URI`; view the logs for the reason. |
 | Page says `AUTH_PROVIDER is not set` | The settings were never applied. Re-run `deploy-oidc.ps1`. |
 | Redirect URI error from Entra | The redirect URI on the app registration must exactly match `<app url>/auth/callback`. |
+| `Exposing the access_as_user scope failed.` | Use the latest deployment script and re-run it. The script uses the Graph application object-ID URL to avoid Windows `az.cmd` parsing errors with parentheses in the alternate-key URL, and writes the request as UTF-8 without a BOM for Windows PowerShell compatibility. If it still fails, inspect the Azure CLI error immediately above this message for Graph permission or tenant-policy details. |
 | Scope or consent error | The `access_as_user` scope exists and the Application ID URI is `api://<client-id>` (**Expose an API**). |
 | `storage: local` or blob errors | `AZURE_STORAGE_*` settings exist, and the app's managed identity has `Storage Blob Data Contributor` on the storage account. |
 | App does not start | `az webapp log tail --name <web app> --resource-group <resource group>` |

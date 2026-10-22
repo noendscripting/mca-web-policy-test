@@ -6,6 +6,13 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-Location (Split-Path $PSScriptRoot -Parent)
 
+# The source-only ZIP needs Oryx to install dependencies on Linux App Service.
+az webapp config appsettings set --name $WebAppName --resource-group $ResourceGroup `
+  --settings SCM_DO_BUILD_DURING_DEPLOYMENT=true ENABLE_ORYX_BUILD=true --output none
+if ($LASTEXITCODE) {
+  throw 'Could not enable dependency installation during deployment. Code was not uploaded.'
+}
+
 # Zip deploy authenticates to SCM with basic auth. web-app.bicep sets this too; repeating it
 # here lets this script also redeploy code to an app whose setting was turned off later.
 az resource update --resource-group $ResourceGroup --namespace Microsoft.Web `

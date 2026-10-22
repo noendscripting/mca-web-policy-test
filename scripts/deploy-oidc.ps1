@@ -47,12 +47,14 @@ if (-not (az ad sp list --filter "appId eq '$clientId'" --query '[0].id' --outpu
 }
 
 # Expose api://<client-id> with the access_as_user scope that sign-in requests.
-$hasScope = az ad app show --id $clientId --query "api.oauth2PermissionScopes[?value=='access_as_user'] | length(@)" --output tsv
-if ($hasScope -eq '0') {
+$registration = az ad app show --id $clientId --output json | ConvertFrom-Json
+Assert-Az 'Reading the app registration failed.'
+$hasScope = @($registration.api.oauth2PermissionScopes | Where-Object { $_.value -eq 'access_as_user' }).Count -gt 0
+if (-not $hasScope) {
   $body = @{
-    identifierUris = @("api://$clientId")
+    identifierUris = @(@($registration.identifierUris) + @("api://$clientId") | Select-Object -Unique)
     api            = @{
-      oauth2PermissionScopes = @(@{
+      oauth2PermissionScopes = @($registration.api.oauth2PermissionScopes) + @(@{
           id                      = [guid]::NewGuid().ToString()
           value                   = 'access_as_user'
           type                    = 'User'
@@ -66,8 +68,8 @@ if ($hasScope -eq '0') {
   } | ConvertTo-Json -Depth 6
   $bodyFile = Join-Path ([IO.Path]::GetTempPath()) "oidc-api-$([guid]::NewGuid().ToString('N')).json"
   try {
-    Set-Content -Path $bodyFile -Value $body -Encoding utf8
-    az rest --method PATCH --uri "https://graph.microsoft.com/v1.0/applications(appId='$clientId')" `
+    [IO.File]::WriteAllText($bodyFile, $body, [Text.UTF8Encoding]::new($false))
+    az rest --method PATCH --uri "https://graph.microsoft.com/v1.0/applications/$($registration.id)" `
       --headers 'Content-Type=application/json' --body "@$bodyFile" --output none
     Assert-Az 'Exposing the access_as_user scope failed.'
   }

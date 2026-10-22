@@ -40,6 +40,8 @@ Follow the guide for the sign-in method you want (each guide is the complete pro
 
 ### SCM publishing credentials
 
+The deployment ZIP contains source code, not `node_modules`. Before each upload, `scripts/deploy.ps1` sets `SCM_DO_BUILD_DURING_DEPLOYMENT=true` and `ENABLE_ORYX_BUILD=true` so Linux App Service uses Oryx to install the production dependencies, including `dotenv`. Both full deployment scripts use this same code-upload path.
+
 Code is uploaded with zip deploy, which needs **SCM Basic Auth Publishing Credentials** enabled on the app. `infra/web-app.bicep` enables it, and `scripts/deploy.ps1` re-enables it before each upload. FTP and user sign-in settings are not changed.
 
 To re-upload code to an existing app without re-provisioning:
@@ -47,6 +49,8 @@ To re-upload code to an existing app without re-provisioning:
 ```powershell
 .\scripts\deploy.ps1 -WebAppName mcawebpolicy-oidc-web -ResourceGroup rg-mca-web-policy-test   # SAML: mcawebpolicy-saml-web
 ```
+
+If startup reports `Cannot find module 'dotenv'`, use the code-only redeploy above to rebuild the dependencies; restarting alone does not install them. Check the deployment build logs for Oryx/npm installation, then request `https://<app-name>.azurewebsites.net/health` to confirm startup. There is no need to recreate the Entra app registration or rotate its client secret.
 
 If enabling fails, check your permissions and Azure Policy. If your organization forbids basic publishing authentication, deploy with Microsoft Entra authentication instead (for example GitHub Actions with Azure OIDC); a publish-profile workflow needs SCM basic auth too.
 
